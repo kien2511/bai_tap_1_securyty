@@ -56,32 +56,53 @@ Nếu biết mẩu plaintext/ciphertext tương ứng (known-plaintext) có th�
 
 # code c++
 #include <bits/stdc++.h>
+
 using namespace std;
 
 string caesar_encrypt(const string &text, int shift) {
+
     string res;
+    
     for (size_t i = 0; i < text.size(); i++) {
+    
         char c = text[i];
+        
         if (isalpha((unsigned char)c)) {
+        
             char base = isupper(c) ? 'A' : 'a';
+            
             res += (c - base + shift) % 26 + base;
+            
         } else res += c;
+        
     }
+    
     return res;
+    
 }
 
 string caesar_decrypt(const string &text, int shift) {
+
     return caesar_encrypt(text, 26 - shift);
+    
 }
 
 int main() {
+
     string text = "HELLOWORLD";
+    
     int shift = 3;
+    
     cout << "Ban ro: " << text << endl;
+    
     string enc = caesar_encrypt(text, shift);
+    
     cout << "Ban ma: " << enc << endl;
+    
     cout << "Giai ma: " << caesar_decrypt(enc, shift) << endl;
+    
     return 0;
+    
 }
 
 
@@ -118,48 +139,83 @@ Chỉ cần 2 cặp plaintext-ciphertext để giải hệ phương trình tuy�
 
 # code c++
 #include <bits/stdc++.h>
+
 using namespace std;
 
 int modInverse(int a, int m) {
+
     a %= m;
+    
     for (int x = 1; x < m; x++)
+    
         if ((a * x) % m == 1) return x;
+        
     return -1;
+    
 }
 
 string affine_encrypt(const string &text, int a, int b) {
+
     string res;
+    
     for (size_t i = 0; i < text.size(); i++) {
+    
         char c = text[i];
+        
         if (isalpha((unsigned char)c)) {
+        
             char base = isupper(c) ? 'A' : 'a';
+            
             res += (char)((a * (c - base) + b) % 26 + base);
+            
         } else res += c;
+        
     }
+    
     return res;
+    
 }
 
 string affine_decrypt(const string &text, int a, int b) {
+
     string res;
+    
     int inv = modInverse(a, 26);
+    
     for (size_t i = 0; i < text.size(); i++) {
+    
         char c = text[i];
+        
         if (isalpha((unsigned char)c)) {
+        
             char base = isupper(c) ? 'A' : 'a';
+            
             res += (char)(((inv * ((c - base) - b + 26)) % 26) + base);
+            
         } else res += c;
+        
     }
+    
     return res;
+    
 }
 
 int main() {
+
     string text = "HELLOWORLD";
+    
     int a = 5, b = 8;
+    
     cout << "Ban ro: " << text << endl;
+    
     string enc = affine_encrypt(text, a, b);
+    
     cout << "Ban ma: " << enc << endl;
+    
     cout << "Giai ma: " << affine_decrypt(enc, a, b) << endl;
+    
     return 0;
+    
 }
 
 
@@ -204,44 +260,75 @@ Known-plaintext: có thể trực tiếp phục hồi thứ tự cột.
 # code c++
 
 #include <bits/stdc++.h>
+
 using namespace std;
 
 string permutation_encrypt(const string &text, const vector<int> &perm) {
+
     string res;
+    
     int n = perm.size();
+    
     for (size_t i = 0; i < text.size(); i += n) {
+    
         for (int j = 0; j < n; j++) {
+        
             int idx = i + perm[j];
+            
             if (idx < (int)text.size()) res += text[idx];
+            
             else res += 'X'; // padding
+            
         }
+        
     }
+    
     return res;
+    
 }
 
 string permutation_decrypt(const string &cipher, const vector<int> &perm) {
+
     string res(cipher.size(), ' ');
+    
     int n = perm.size();
+    
     for (size_t i = 0; i < cipher.size(); i += n) {
+    
         for (int j = 0; j < n; j++) {
+        
             int idx = i + perm[j];
+            
             if (idx < (int)cipher.size())
+            
                 res[idx] = cipher[i + j];
+                
         }
+        
     }
+    
     return res;
+    
 }
 
 int main() {
+
     string text = "HELLOWORLD";
+    
     int arr[] = {2,0,3,1};
+    
     vector<int> perm(arr, arr+4);
 
     cout << "Ban ro: " << text << endl;
+    
     string enc = permutation_encrypt(text, perm);
+    
     cout << "Ban ma: " << enc << endl;
+    
     cout << "Giai ma: " << permutation_decrypt(enc, perm) << endl;
+    
     return 0;
+    
 }
 
 # kết quả 
@@ -275,45 +362,79 @@ Friedman test (index of coincidence) để ước lượng độ dài khoá.
 Sau khi biết độ dài m, tách văn bản thành m dãy (mỗi dãy là Caesar) và dùng phân tích tần suất cho từng dãy để tìm dịch shift.
 
 # code c++
+
 #include <bits/stdc++.h>
+
 using namespace std;
 
 string vigenere_encrypt(const string &text, const string &key) {
+
     string res;
+    
     int n = key.size();
+    
     for (size_t i = 0; i < text.size(); i++) {
+    
         char c = text[i];
+        
         if (isalpha((unsigned char)c)) {
+        
             char base = isupper(c) ? 'A' : 'a';
+            
             char k = toupper(key[i % n]) - 'A';
+            
             res += (c - base + k) % 26 + base;
+            
         } else res += c;
+        
     }
+    
     return res;
+    
 }
 
 string vigenere_decrypt(const string &text, const string &key) {
+
     string res;
+    
     int n = key.size();
+    
     for (size_t i = 0; i < text.size(); i++) {
+    
         char c = text[i];
+        
         if (isalpha((unsigned char)c)) {
+        
             char base = isupper(c) ? 'A' : 'a';
+            
             char k = toupper(key[i % n]) - 'A';
+            
             res += (c - base - k + 26) % 26 + base;
+            
         } else res += c;
+        
     }
+    
     return res;
+    
 }
 
 int main() {
+
     string text = "HELLOWORLD";
+    
     string key = "KEY";
+    
     cout << "Ban ro: " << text << endl;
+    
     string enc = vigenere_encrypt(text, key);
+    
     cout << "Ban ma: " << enc << endl;
+
     cout << "Giai ma: " << vigenere_decrypt(enc, key) << endl;
+    
     return 0;
+    
 }
 
 
@@ -363,88 +484,159 @@ Known-plaintext tấn công có thể dẫn đến ma trận.
 # code c++
 
 #include <bits/stdc++.h>
+
 using namespace std;
 
 vector<vector<char> > generateMatrix(const string &key) {
+
     string k = key;
+    
     string alphabet = "ABCDEFGHIKLMNOPQRSTUVWXYZ"; // J = I
+    
     for (size_t i = 0; i < alphabet.size(); i++) {
+    
         char c = alphabet[i];
+        
         if (k.find(c) == string::npos) k += c;
+        
     }
 
     vector<vector<char> > matrix(5, vector<char>(5));
+    
     int idx = 0;
+    
     for (int i = 0; i < 5; i++)
+    
         for (int j = 0; j < 5; j++)
+        
             matrix[i][j] = k[idx++];
+            
     return matrix;
+    
 }
 
 pair<int,int> findPos(const vector<vector<char> > &matrix, char c) {
+
     if (c == 'J') c = 'I';
+    
     for (int i=0; i<5; i++)
+    
         for (int j=0; j<5; j++)
+        
             if (matrix[i][j] == c) return make_pair(i,j);
+            
     return make_pair(-1,-1);
+    
 }
 
 string playfair_encrypt(string text, const string &key) {
+
     vector<vector<char> > matrix = generateMatrix(key);
+    
     string res;
+    
     for (size_t i=0; i<text.size(); i+=2) {
+    
         char a = text[i];
+        
         char b = (i+1 < text.size() ? text[i+1] : 'X');
+        
         if (a==b) b='X';
+        
         pair<int,int> p1 = findPos(matrix,a);
+        
         pair<int,int> p2 = findPos(matrix,b);
+        
         int r1=p1.first, c1=p1.second;
+        
         int r2=p2.first, c2=p2.second;
+        
         if (r1==r2) {
+        
             res += matrix[r1][(c1+1)%5];
+            
             res += matrix[r2][(c2+1)%5];
+            
         } else if (c1==c2) {
+        
             res += matrix[(r1+1)%5][c1];
+            
             res += matrix[(r2+1)%5][c2];
+            
         } else {
+        
             res += matrix[r1][c2];
+            
             res += matrix[r2][c1];
+            
         }
+        
     }
+    
     return res;
+    
 }
 
 string playfair_decrypt(string text, const string &key) {
+
     vector<vector<char> > matrix = generateMatrix(key);
+    
     string res;
+    
     for (size_t i=0; i<text.size(); i+=2) {
+    
         char a = text[i], b = text[i+1];
+        
         pair<int,int> p1 = findPos(matrix,a);
+        
         pair<int,int> p2 = findPos(matrix,b);
+        
         int r1=p1.first, c1=p1.second;
+        
         int r2=p2.first, c2=p2.second;
+        
         if (r1==r2) {
+        
             res += matrix[r1][(c1+4)%5];
+            
             res += matrix[r2][(c2+4)%5];
+            
         } else if (c1==c2) {
+        
             res += matrix[(r1+4)%5][c1];
+            
             res += matrix[(r2+4)%5][c2];
+            
         } else {
+        
             res += matrix[r1][c2];
+            
             res += matrix[r2][c1];
+            
         }
+        
     }
+    
     return res;
+    
 }
 
 int main() {
+
     string text = "HELLOWORLD";
+    
     string key = "KEYWORD";
+    
     cout << "Ban ro: " << text << endl;
+    
     string enc = playfair_encrypt(text, key);
+    
     cout << "Ban ma: " << enc << endl;
+    
     cout << "Giai ma: " << playfair_decrypt(enc, key) << endl;
+    
     return 0;
+    
 }
 
 
