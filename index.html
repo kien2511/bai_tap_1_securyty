@@ -1,0 +1,278 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Cipher Demo</title>
+<style>
+body{font-family:Arial; margin:20px}
+.row{margin-bottom:10px}
+label{display:block; font-weight:600}
+textarea{width:100%; height:60px}
+select,input{padding:5px; margin-top:4px}
+.container{max-width:900px}
+.card{border:1px solid #ddd;padding:12px;margin-bottom:12px;border-radius:6px}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Cipher Demo (Caesar, Affine, Columnar, Vigenère, Playfair)</h1>
+
+<div class="card">
+  <label>Chọn cipher</label>
+  <select id="cipher">
+    <option value="caesar">Caesar</option>
+    <option value="affine">Affine</option>
+    <option value="columnar">Columnar (Permutation)</option>
+    <option value="vigenere">Vigenère</option>
+    <option value="playfair">Playfair</option>
+  </select>
+  <div id="params"></div>
+  <div class="row">
+    <label>Input (Plain or Cipher)</label>
+    <textarea id="input">HELLOWORLD</textarea>
+  </div>
+  <button onclick="doEncrypt()">Encrypt</button>
+  <button onclick="doDecrypt()">Decrypt</button>
+  <div class="row">
+    <label>Output</label>
+    <textarea id="output"></textarea>
+  </div>
+</div>
+</div>
+
+<script>
+// helper
+function isalpha(ch){ return /[A-Za-z]/.test(ch); }
+function up(s){ return s.toUpperCase(); }
+
+// UI param render
+const paramsDiv = document.getElementById('params');
+function renderParams(){
+  const c = document.getElementById('cipher').value;
+  let html='';
+  if(c==='caesar'){
+    html = '<label>Key (k)</label><input id="k" type="number" value="3"/>';
+  } else if(c==='affine'){
+    html = '<label>a (must be coprime with 26)</label><input id="a" type="number" value="5"/>' +
+           '<label>b</label><input id="b" type="number" value="8"/>';
+  } else if(c==='columnar'){
+    html = '<label>Key (word)</label><input id="colkey" value="ZEBRAS"/>';
+  } else if(c==='vigenere'){
+    html = '<label>Key (word)</label><input id="vkey" value="LEMON"/>';
+  } else if(c==='playfair'){
+    html = '<label>Key (word)</label><input id="pkey" value="PLAYFAIR EXAMPLE"/>';
+  }
+  paramsDiv.innerHTML = html;
+}
+document.getElementById('cipher').addEventListener('change', renderParams);
+renderParams();
+
+// cipher functions (JS)
+function caesar(s,k,enc=true){
+  k = ((k%26)+26)%26;
+  let out="";
+  for(let ch of s){
+    if(/[A-Z]/.test(ch)){
+      let base='A'.charCodeAt(0);
+      let code=ch.charCodeAt(0)-base;
+      out += String.fromCharCode(base + ((enc?code+ k: code - k+26)%26));
+    } else if(/[a-z]/.test(ch)){
+      let base='a'.charCodeAt(0);
+      let code=ch.charCodeAt(0)-base;
+      out += String.fromCharCode(base + ((enc?code+ k: code - k+26)%26));
+    } else out += ch;
+  }
+  return out;
+}
+
+function egcd(a,b){ if(b==0) return [a,1,0]; let r=egcd(b,a%b); return [r[0], r[2], r[1]-Math.floor(a/b)*r[2]]; }
+function modInv(a,m){ a=((a%m)+m)%m; let r=egcd(a,m); if(r[0]!=1) return null; return ((r[1]%m)+m)%m; }
+
+function affine_encrypt(pt,a,b){
+  let out='';
+  for(let ch of pt){
+    if(/[A-Za-z]/.test(ch)){
+      let upper = /[A-Z]/.test(ch);
+      let base = upper ? 'A'.charCodeAt(0): 'a'.charCodeAt(0);
+      let x = ch.charCodeAt(0)-base;
+      let y = (a*x + b) % 26;
+      out += String.fromCharCode(base + y);
+    } else out+=ch;
+  }
+  return out;
+}
+function affine_decrypt(ct,a,b){
+  let inv = modInv(a,26);
+  if(inv===null) return "Invalid a (no inverse)";
+  let out='';
+  for(let ch of ct){
+    if(/[A-Za-z]/.test(ch)){
+      let upper = /[A-Z]/.test(ch);
+      let base = upper ? 'A'.charCodeAt(0): 'a'.charCodeAt(0);
+      let y = ch.charCodeAt(0)-base;
+      let x = (inv * (y - b)) % 26;
+      if(x<0) x+=26;
+      out += String.fromCharCode(base + x);
+    } else out+=ch;
+  }
+  return out;
+}
+
+function columnar_encrypt(pt,key){
+  // remove spaces
+  let s = pt.replace(/\s+/g,'');
+  let n = key.length;
+  let ord = key.split('').map((c,i)=>[c,i]).sort();
+  let rows = Math.ceil(s.length / n);
+  let grid = Array.from({length:rows}, ()=> Array(n).fill('X'));
+  let idx=0;
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<n;c++){
+      grid[r][c] = idx < s.length ? s[idx++] : 'X';
+    }
+  }
+  let ct='';
+  for(let p of ord){
+    let c = p[1];
+    for(let r=0;r<rows;r++) ct+=grid[r][c];
+  }
+  return ct;
+}
+function columnar_decrypt(ct,key){
+  let n = key.length;
+  let rows = Math.ceil(ct.length / n);
+  let ord = key.split('').map((c,i)=>[c,i]).sort();
+  let grid = Array.from({length:rows}, ()=> Array(n).fill(' '));
+  let idx=0;
+  for(let p of ord){
+    let c = p[1];
+    for(let r=0;r<rows;r++){
+      grid[r][c] = idx < ct.length ? ct[idx++] : 'X';
+    }
+  }
+  let pt='';
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<n;c++) pt+=grid[r][c];
+  }
+  return pt;
+}
+
+function vigenere_encrypt(pt,key){
+  let out=''; let ki=0; key = key.toUpperCase();
+  for(let ch of pt){
+    if(/[A-Za-z]/.test(ch)){
+      let upper = /[A-Z]/.test(ch);
+      let base = upper ? 'A'.charCodeAt(0) : 'a'.charCodeAt(0);
+      let p = ch.charCodeAt(0)-base;
+      let shift = key[ki % key.length].charCodeAt(0) - 'A'.charCodeAt(0);
+      out += String.fromCharCode(base + (p + shift) % 26);
+      ki++;
+    } else out+=ch;
+  }
+  return out;
+}
+function vigenere_decrypt(ct,key){
+  let out=''; let ki=0; key = key.toUpperCase();
+  for(let ch of ct){
+    if(/[A-Za-z]/.test(ch)){
+      let upper = /[A-Z]/.test(ch);
+      let base = upper ? 'A'.charCodeAt(0) : 'a'.charCodeAt(0);
+      let c = ch.charCodeAt(0)-base;
+      let shift = key[ki % key.length].charCodeAt(0) - 'A'.charCodeAt(0);
+      let p = (c - shift) % 26; if(p<0) p+=26;
+      out += String.fromCharCode(base + p);
+      ki++;
+    } else out+=ch;
+  }
+  return out;
+}
+
+// Playfair JS (simple)
+function genPlayMatrix(key){
+  key = key.toUpperCase().replace(/[^A-Z]/g,'').replace(/J/g,'I');
+  let seen = new Set();
+  let seq = '';
+  for(let ch of key) if(!seen.has(ch)){ seen.add(ch); seq+=ch; }
+  let alpha = 'ABCDEFGHIKLMNOPQRSTUVWXYZ';
+  for(let ch of alpha) if(!seen.has(ch)){ seen.add(ch); seq+=ch; }
+  let mat = [];
+  for(let i=0;i<5;i++) mat.push(seq.slice(i*5,i*5+5).split(''));
+  return mat;
+}
+function findPosMat(mat,ch){
+  if(ch=='J') ch='I';
+  for(let i=0;i<5;i++) for(let j=0;j<5;j++) if(mat[i][j]==ch) return [i,j];
+  return [-1,-1];
+}
+function preprocessPF(pt){
+  pt = pt.toUpperCase().replace(/[^A-Z]/g,'').replace(/J/g,'I');
+  let out='';
+  for(let i=0;i<pt.length;){
+    let a = pt[i], b = pt[i+1] || '';
+    if(!b){ out+=a+'X'; i++; }
+    else if(a==b){ out+=a+'X'; i++; }
+    else { out+=a+b; i+=2; }
+  }
+  return out;
+}
+function playfair_encrypt(pt,key){
+  let mat = genPlayMatrix(key);
+  let s = preprocessPF(pt);
+  let out='';
+  for(let i=0;i<s.length;i+=2){
+    let a=s[i], b=s[i+1];
+    let p1=findPosMat(mat,a), p2=findPosMat(mat,b);
+    let r1=p1[0], c1=p1[1], r2=p2[0], c2=p2[1];
+    if(r1==r2){
+      out+=mat[r1][(c1+1)%5]+mat[r2][(c2+1)%5];
+    } else if(c1==c2){
+      out+=mat[(r1+1)%5][c1]+mat[(r2+1)%5][c2];
+    } else {
+      out+=mat[r1][c2]+mat[r2][c1];
+    }
+  }
+  return out;
+}
+function playfair_decrypt(ct,key){
+  let mat = genPlayMatrix(key);
+  let out='';
+  for(let i=0;i<ct.length;i+=2){
+    let a=ct[i], b=ct[i+1];
+    let p1=findPosMat(mat,a), p2=findPosMat(mat,b);
+    let r1=p1[0], c1=p1[1], r2=p2[0], c2=p2[1];
+    if(r1==r2){
+      out+=mat[r1][(c1+4)%5]+mat[r2][(c2+4)%5];
+    } else if(c1==c2){
+      out+=mat[(r1+4)%5][c1]+mat[(r2+4)%5][c2];
+    } else {
+      out+=mat[r1][c2]+mat[r2][c1];
+    }
+  }
+  return out;
+}
+
+function doEncrypt(){
+  const c = document.getElementById('cipher').value;
+  const txt = document.getElementById('input').value;
+  let out='';
+  if(c==='caesar') out = caesar(txt, parseInt(document.getElementById('k').value), true);
+  else if(c==='affine') out = affine_encrypt(txt, parseInt(document.getElementById('a').value), parseInt(document.getElementById('b').value));
+  else if(c==='columnar') out = columnar_encrypt(txt, document.getElementById('colkey').value);
+  else if(c==='vigenere') out = vigenere_encrypt(txt, document.getElementById('vkey').value);
+  else if(c==='playfair') out = playfair_encrypt(txt, document.getElementById('pkey').value);
+  document.getElementById('output').value = out;
+}
+function doDecrypt(){
+  const c = document.getElementById('cipher').value;
+  const txt = document.getElementById('input').value;
+  let out='';
+  if(c==='caesar') out = caesar(txt, parseInt(document.getElementById('k').value), false);
+  else if(c==='affine') out = affine_decrypt(txt, parseInt(document.getElementById('a').value), parseInt(document.getElementById('b').value));
+  else if(c==='columnar') out = columnar_decrypt(txt, document.getElementById('colkey').value);
+  else if(c==='vigenere') out = vigenere_decrypt(txt, document.getElementById('vkey').value);
+  else if(c==='playfair') out = playfair_decrypt(txt, document.getElementById('pkey').value);
+  document.getElementById('output').value = out;
+}
+</script>
+</body>
+</html>
