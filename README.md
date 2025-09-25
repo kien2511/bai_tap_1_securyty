@@ -643,3 +643,46 @@ int main() {
 # kết quả 
 <img width="1919" height="885" alt="image" src="https://github.com/user-attachments/assets/2727ed89-04b3-4634-a93f-7fa97c90b8c6" />
 
+# demo html,css,js
+
+saersar
+
+<img width="1919" height="886" alt="image" src="https://github.com/user-attachments/assets/2c1e60af-253d-49dd-8357-aadad1ff07d3" />
+
+<img width="1911" height="918" alt="image" src="https://github.com/user-attachments/assets/db8289c8-e663-43cb-a7d2-85f18b797ff0" />
+
+
+affine
+
+<img width="1919" height="911" alt="image" src="https://github.com/user-attachments/assets/44eea100-7f48-401d-bbac-2b163bd52b12" />
+
+<img width="1917" height="916" alt="image" src="https://github.com/user-attachments/assets/9a5021ab-3884-4d35-94a3-ad493da88e9c" />
+
+hoán vị
+
+<img width="1914" height="917" alt="image" src="https://github.com/user-attachments/assets/58073487-edce-4e6e-b369-4d27643744ef" />
+
+<img width="1919" height="908" alt="image" src="https://github.com/user-attachments/assets/8bc95a02-62f7-470f-b1fc-5907028f3c0b" />
+
+vigenere
+
+<img width="1918" height="918" alt="image" src="https://github.com/user-attachments/assets/1c93d644-0fd6-467a-b71b-823a35219fcd" />
+
+<img width="1919" height="887" alt="image" src="https://github.com/user-attachments/assets/3f508b26-7c35-4ea9-8338-a32dde103044" />
+
+# playfair
+
+<img width="1917" height="936" alt="image" src="https://github.com/user-attachments/assets/6fd7685b-bcbf-4d94-91a2-c6a82a450425" />
+
+<img width="1911" height="897" alt="image" src="https://github.com/user-attachments/assets/c127240c-9585-4c9f-b69e-1845be5097df" />
+
+
+
+
+
+
+
+
+
+
+
